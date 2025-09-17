@@ -7,113 +7,125 @@
 <h1>CMDB Dashboard</h1>
 
 <div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
+    <div class="col-12 col-sm-6 col-lg-3 mb-3">
+        <div class="card text-white bg-primary h-100">
             <div class="card-header">Servers</div>
-            <div class="card-body">
+            <div class="card-body d-flex flex-column">
                 <h5 class="card-title">@Model.ServerCount</h5>
-                <p class="card-text">@Model.ActiveServers active</p>
-                <a href="/Servers" class="btn btn-light btn-sm">View All</a>
+                <p class="card-text flex-grow-1">@Model.ActiveServers active</p>
+                <a href="/Servers" class="btn btn-light btn-sm mt-auto">View All</a>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
+    <div class="col-12 col-sm-6 col-lg-3 mb-3">
+        <div class="card text-white bg-success h-100">
             <div class="card-header">Applications</div>
-            <div class="card-body">
+            <div class="card-body d-flex flex-column">
                 <h5 class="card-title">@Model.ApplicationCount</h5>
-                <p class="card-text">@Model.CriticalApplications.Count critical</p>
-                <a href="/Applications" class="btn btn-light btn-sm">View All</a>
+                <p class="card-text flex-grow-1">@Model.CriticalApplications.Count critical</p>
+                <a href="/Applications" class="btn btn-light btn-sm mt-auto">View All</a>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
+    <div class="col-12 col-sm-6 col-lg-3 mb-3">
+        <div class="card text-white bg-info h-100">
             <div class="card-header">Services</div>
-            <div class="card-body">
+            <div class="card-body d-flex flex-column">
                 <h5 class="card-title">@Model.ServiceCount</h5>
-                <p class="card-text">@Model.RunningServices running</p>
-                <a href="/Services" class="btn btn-light btn-sm">View All</a>
+                <p class="card-text flex-grow-1">@Model.RunningServices running</p>
+                <a href="/Services" class="btn btn-light btn-sm mt-auto">View All</a>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
+    <div class="col-12 col-sm-6 col-lg-3 mb-3">
+        <div class="card text-white bg-warning h-100">
             <div class="card-header">Dependencies</div>
-            <div class="card-body">
+            <div class="card-body d-flex flex-column">
                 <h5 class="card-title">@Model.DependencyCount</h5>
-                <p class="card-text">Mapped connections</p>
-                <a href="/Dependencies" class="btn btn-light btn-sm">View Map</a>
+                <p class="card-text flex-grow-1">Mapped connections</p>
+                <a href="/Dependencies" class="btn btn-light btn-sm mt-auto">View Map</a>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-6">
+    <div class="col-12 col-lg-6 mb-4">
         <h3>Recent Servers</h3>
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Hostname</th>
-                    <th>Environment</th>
-                    <th>Status</th>
-                    <th>Added</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var server in Model.RecentServers)
-                {
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
                     <tr>
-                        <td><a href="/Servers/Details/@server.Id">@server.Hostname</a></td>
-                        <td>
-                            <span class="badge bg-@(server.Environment == "production" ? "danger" : server.Environment == "development" ? "info" : "warning")">
-                                @server.Environment
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-@(server.Status == "active" ? "success" : "secondary")">
-                                @server.Status
-                            </span>
-                        </td>
-                        <td>@server.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        <th>Hostname</th>
+                        <th class="d-none d-sm-table-cell">Environment</th>
+                        <th>Status</th>
+                        <th class="d-none d-md-table-cell">Added</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var server in Model.RecentServers)
+                    {
+                        <tr>
+                            <td><a href="/Servers/Details/@server.Id">@server.Hostname</a></td>
+                            <td class="d-none d-sm-table-cell">
+                                <span class="badge bg-@(server.Environment == "production" ? "danger" : server.Environment == "development" ? "info" : "warning")">
+                                    @server.Environment
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-@(server.Status == "active" ? "success" : "secondary")">
+                                    @server.Status
+                                </span>
+                            </td>
+                            <td class="d-none d-md-table-cell">@server.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-12 col-lg-6 mb-4">
         <h3>Critical Applications</h3>
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Version</th>
-                    <th>Owner</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var app in Model.CriticalApplications)
-                {
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
                     <tr>
-                        <td><a href="/Applications/Details/@app.Id">@app.Name</a></td>
-                        <td>@app.Version</td>
-                        <td>@app.Owner</td>
+                        <th>Name</th>
+                        <th class="d-none d-sm-table-cell">Version</th>
+                        <th>Owner</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model.CriticalApplications)
+                    {
+                        <tr>
+                            <td><a href="/Applications/Details/@app.Id">@app.Name</a></td>
+                            <td class="d-none d-sm-table-cell">@app.Version</td>
+                            <td>@app.Owner</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-12">
+    <div class="col-12">
         <h3>Quick Actions</h3>
-        <div class="btn-group" role="group">
-            <a href="/Servers/Create" class="btn btn-outline-primary">Add Server</a>
-            <a href="/Applications/Create" class="btn btn-outline-success">Add Application</a>
-            <a href="/Services/Create" class="btn btn-outline-info">Add Service</a>
-            <a href="/Dependencies/Create" class="btn btn-outline-warning">Add Dependency</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="/Servers/Create" class="btn btn-outline-primary">
+                <i class="bi bi-server"></i> Add Server
+            </a>
+            <a href="/Applications/Create" class="btn btn-outline-success">
+                <i class="bi bi-app"></i> Add Application
+            </a>
+            <a href="/Services/Create" class="btn btn-outline-info">
+                <i class="bi bi-gear"></i> Add Service
+            </a>
+            <a href="/Dependencies/Create" class="btn btn-outline-warning">
+                <i class="bi bi-diagram-3"></i> Add Dependency
+            </a>
         </div>
     </div>
 </div>
