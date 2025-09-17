@@ -1,0 +1,169 @@
+@model SimpleCMDB.ViewModels.DependencyViewModel
+
+@{
+    ViewData["Title"] = "Dependencies";
+}
+
+<h1>Service Dependencies</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Dependency Map</h3>
+        <div id="dependencyMap" class="border p-3" style="min-height: 400px; background: #f8f9fa;">
+            <svg id="dependencySvg" width="100%" height="400"></svg>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <h3>Dependency List</h3>
+        <p>
+            <a asp-action="Create" class="btn btn-primary btn-sm">Add Dependency</a>
+        </p>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Target</th>
+                        <th>Description</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Dependencies) {
+                    <tr>
+                        <td>@item.SourceService?.ServiceName</td>
+                        <td>@item.TargetService?.ServiceName</td>
+                        <td>@item.Description</td>
+                        <td>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        drawDependencyMap();
+    });
+
+    function drawDependencyMap() {
+        const dependencies = @Html.Raw(Json.Serialize(Model.Dependencies.Select(d => new {
+            source = d.SourceService?.ServiceName ?? "Unknown",
+            target = d.TargetService?.ServiceName ?? "Unknown",
+            sourceHost = d.SourceService?.Server?.Hostname ?? "",
+            targetHost = d.TargetService?.Server?.Hostname ?? ""
+        })));
+
+        const svg = document.getElementById('dependencySvg');
+        svg.innerHTML = '';
+
+        if (dependencies.length === 0) {
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', '50%');
+            text.setAttribute('y', '50%');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('fill', '#6c757d');
+            text.textContent = 'No dependencies configured';
+            svg.appendChild(text);
+            return;
+        }
+
+        // Create nodes from dependencies
+        const nodes = new Map();
+        dependencies.forEach(dep => {
+            if (!nodes.has(dep.source)) {
+                nodes.set(dep.source, { name: dep.source, host: dep.sourceHost });
+            }
+            if (!nodes.has(dep.target)) {
+                nodes.set(dep.target, { name: dep.target, host: dep.targetHost });
+            }
+        });
+
+        const nodeArray = Array.from(nodes.values());
+        const centerX = 250;
+        const centerY = 200;
+        const radius = 150;
+
+        // Position nodes in a circle
+        nodeArray.forEach((node, i) => {
+            const angle = (2 * Math.PI * i) / nodeArray.length;
+            node.x = centerX + radius * Math.cos(angle);
+            node.y = centerY + radius * Math.sin(angle);
+        });
+
+        // Draw edges
+        dependencies.forEach(dep => {
+            const sourceNode = nodeArray.find(n => n.name === dep.source);
+            const targetNode = nodeArray.find(n => n.name === dep.target);
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', sourceNode.x);
+            line.setAttribute('y1', sourceNode.y);
+            line.setAttribute('x2', targetNode.x);
+            line.setAttribute('y2', targetNode.y);
+            line.setAttribute('stroke', '#007bff');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('marker-end', 'url(#arrowhead)');
+            svg.appendChild(line);
+        });
+
+        // Draw nodes
+        nodeArray.forEach(node => {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', node.x);
+            circle.setAttribute('cy', node.y);
+            circle.setAttribute('r', '25');
+            circle.setAttribute('fill', '#28a745');
+            circle.setAttribute('stroke', '#fff');
+            circle.setAttribute('stroke-width', '2');
+            g.appendChild(circle);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', node.x);
+            text.setAttribute('y', node.y + 5);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('fill', 'white');
+            text.setAttribute('font-size', '10');
+            text.textContent = node.name;
+            g.appendChild(text);
+
+            if (node.host) {
+                const hostText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                hostText.setAttribute('x', node.x);
+                hostText.setAttribute('y', node.y + 40);
+                hostText.setAttribute('text-anchor', 'middle');
+                hostText.setAttribute('fill', '#6c757d');
+                hostText.setAttribute('font-size', '9');
+                hostText.textContent = node.host;
+                g.appendChild(hostText);
+            }
+
+            svg.appendChild(g);
+        });
+
+        // Add arrow marker definition
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', 'arrowhead');
+        marker.setAttribute('markerWidth', '10');
+        marker.setAttribute('markerHeight', '7');
+        marker.setAttribute('refX', '25');
+        marker.setAttribute('refY', '3.5');
+        marker.setAttribute('orient', 'auto');
+
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+        polygon.setAttribute('fill', '#007bff');
+        marker.appendChild(polygon);
+        defs.appendChild(marker);
+        svg.appendChild(defs);
+    }
+</script>
+}
