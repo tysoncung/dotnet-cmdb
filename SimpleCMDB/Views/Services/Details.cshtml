@@ -1,0 +1,150 @@
+@model SimpleCMDB.Models.Service
+
+@{
+    ViewData["Title"] = "Service Details";
+}
+
+<h1>Service Details</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.ServiceName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.ServiceName)
+        </dd>
+        <dt class="col-sm-2">
+            Server
+        </dt>
+        <dd class="col-sm-10">
+            @if (Model.Server != null)
+            {
+                <a href="/Servers/Details/@Model.Server.Id">@Model.Server.Hostname</a>
+            }
+            else
+            {
+                <span>N/A</span>
+            }
+        </dd>
+        <dt class="col-sm-2">
+            Application
+        </dt>
+        <dd class="col-sm-10">
+            @if (Model.Application != null)
+            {
+                <a href="/Applications/Details/@Model.Application.Id">@Model.Application.Name</a>
+            }
+            else
+            {
+                <span>N/A</span>
+            }
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Port)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Port)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Protocol)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Protocol)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Status)
+        </dt>
+        <dd class="col-sm-10">
+            <span class="badge bg-@(Model.Status == "running" ? "success" : Model.Status == "stopped" ? "danger" : "warning")">
+                @Html.DisplayFor(model => model.Status)
+            </span>
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.ProcessName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.ProcessName)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.StartCommand)
+        </dt>
+        <dd class="col-sm-10">
+            <code>@Html.DisplayFor(model => model.StartCommand)</code>
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.ConfigFile)
+        </dt>
+        <dd class="col-sm-10">
+            <code>@Html.DisplayFor(model => model.ConfigFile)</code>
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.LogFile)
+        </dt>
+        <dd class="col-sm-10">
+            <code>@Html.DisplayFor(model => model.LogFile)</code>
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CreatedAt)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CreatedAt)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.UpdatedAt)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.UpdatedAt)
+        </dd>
+    </dl>
+</div>
+
+<div class="row mt-4">
+    @if (Model.SourceDependencies != null && Model.SourceDependencies.Any())
+    {
+        <div class="col-md-6">
+            <h3>Depends On</h3>
+            <ul class="list-group">
+                @foreach (var dep in Model.SourceDependencies)
+                {
+                    <li class="list-group-item">
+                        <strong>@dep.TargetService?.ServiceName</strong>
+                        @if (dep.TargetService?.Server != null)
+                        {
+                            <span class="text-muted"> on @dep.TargetService.Server.Hostname</span>
+                        }
+                        <br />
+                        <small class="text-muted">@dep.Description</small>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.TargetDependencies != null && Model.TargetDependencies.Any())
+    {
+        <div class="col-md-6">
+            <h3>Required By</h3>
+            <ul class="list-group">
+                @foreach (var dep in Model.TargetDependencies)
+                {
+                    <li class="list-group-item">
+                        <strong>@dep.SourceService?.ServiceName</strong>
+                        @if (dep.SourceService?.Server != null)
+                        {
+                            <span class="text-muted"> on @dep.SourceService.Server.Hostname</span>
+                        }
+                        <br />
+                        <small class="text-muted">@dep.Description</small>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

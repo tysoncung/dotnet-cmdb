@@ -1,196 +1,416 @@
 @model SimpleCMDB.ViewModels.DependencyViewModel
 
 @{
-    ViewData["Title"] = "Dependencies";
+    ViewData["Title"] = "Infrastructure Deployment";
+    var servers = Model.Services.Select(s => s.Server).Where(s => s != null).Distinct().ToList();
 }
 
-<h1>Service Dependencies</h1>
+<h1>Infrastructure Deployment & Dependencies</h1>
 
-<div class="row">
-    <div class="col-12 col-lg-6 mb-4">
-        <h3>Dependency Map</h3>
-        <div id="dependencyMap" class="border p-3" style="min-height: 300px; background: #f8f9fa;">
-            <svg id="dependencySvg" width="100%" height="300" viewBox="0 0 500 400" preserveAspectRatio="xMidYMid meet"></svg>
-        </div>
-    </div>
-    <div class="col-12 col-lg-6">
-        <h3>Dependency List</h3>
-        <p>
-            <a asp-action="Create" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle"></i> Add Dependency
-            </a>
-        </p>
+<ul class="nav nav-tabs mb-3" id="viewTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="deployment-tab" data-bs-toggle="tab" data-bs-target="#deployment" type="button" role="tab">
+            <i class="bi bi-diagram-3"></i> Deployment Diagram
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="dependency-tab" data-bs-toggle="tab" data-bs-target="#dependency" type="button" role="tab">
+            <i class="bi bi-arrow-left-right"></i> Service Dependencies
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab">
+            <i class="bi bi-list-ul"></i> List View
+        </button>
+    </li>
+</ul>
 
-        <!-- Desktop table view -->
-        <div class="d-none d-md-block">
-            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Source</th>
-                            <th>Target</th>
-                            <th>Description</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var item in Model.Dependencies) {
-                        <tr>
-                            <td>@item.SourceService?.ServiceName</td>
-                            <td>@item.TargetService?.ServiceName</td>
-                            <td>@item.Description</td>
-                            <td>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
+<div class="tab-content" id="viewTabContent">
+    <div class="tab-pane fade show active" id="deployment" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Server Deployment Architecture</h5>
+            </div>
+            <div class="card-body">
+                <div id="deploymentNetwork" style="height: 700px; border: 1px solid #ddd;"></div>
+                <div class="mt-2">
+                    <button onclick="resetDeploymentView()" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset View
+                    </button>
+                    <button onclick="togglePhysics()" class="btn btn-sm btn-info">
+                        <i class="bi bi-lightning"></i> Toggle Physics
+                    </button>
+                    <span class="ms-3 text-muted">
+                        <i class="bi bi-info-circle"></i> Click and drag to pan, scroll to zoom, double-click nodes for details
+                    </span>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Mobile card view -->
-        <div class="d-md-none">
-            @foreach (var item in Model.Dependencies)
-            {
-                <div class="card mb-2">
-                    <div class="card-body p-2">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="flex-grow-1">
-                                <strong>@item.SourceService?.ServiceName → @item.TargetService?.ServiceName</strong>
-                                <br />
-                                <small class="text-muted">@item.Description</small>
-                            </div>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </div>
-                    </div>
+    <div class="tab-pane fade" id="dependency" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Service Dependency Network</h5>
+            </div>
+            <div class="card-body">
+                <div id="dependencyNetwork" style="height: 700px; border: 1px solid #ddd;"></div>
+                <div class="mt-2">
+                    <button onclick="resetDependencyView()" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset View
+                    </button>
+                    <span class="ms-3 text-muted">
+                        <i class="bi bi-info-circle"></i> Arrows show dependencies (source → target)
+                    </span>
                 </div>
-            }
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="list" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Dependency
+                    </a>
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Source Service</th>
+                                <th>Source Server</th>
+                                <th>→</th>
+                                <th>Target Service</th>
+                                <th>Target Server</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.Dependencies) {
+                            <tr>
+                                <td><strong>@item.SourceService?.ServiceName</strong></td>
+                                <td class="text-muted">@item.SourceService?.Server?.Hostname</td>
+                                <td>→</td>
+                                <td><strong>@item.TargetService?.ServiceName</strong></td>
+                                <td class="text-muted">@item.TargetService?.Server?.Hostname</td>
+                                <td><small>@item.Description</small></td>
+                                <td>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
+<!-- vis.js library -->
+<script src="https://unpkg.com/vis-network@latest/dist/vis-network.min.js"></script>
+<link href="https://unpkg.com/vis-network@latest/dist/dist/vis-network.min.css" rel="stylesheet" />
+
 <script>
+    let deploymentNetwork = null;
+    let dependencyNetwork = null;
+    let physicsEnabled = true;
+
     document.addEventListener('DOMContentLoaded', function() {
-        drawDependencyMap();
+        initDeploymentDiagram();
+        initDependencyNetwork();
     });
 
-    function drawDependencyMap() {
+    function initDeploymentDiagram() {
+        // Prepare data from the model
+        const servers = @Html.Raw(Json.Serialize(Model.Services
+            .Where(s => s.Server != null)
+            .GroupBy(s => s.Server.Id)
+            .Select(g => new {
+                id = g.Key,
+                hostname = g.First().Server.Hostname,
+                ip = g.First().Server.IpAddress,
+                os = g.First().Server.OsType,
+                environment = g.First().Server.Environment,
+                status = g.First().Server.Status,
+                services = g.Select(s => new {
+                    name = s.ServiceName,
+                    port = s.Port,
+                    status = s.Status,
+                    app = s.Application?.Name
+                }).ToList()
+            })));
+
         const dependencies = @Html.Raw(Json.Serialize(Model.Dependencies.Select(d => new {
-            source = d.SourceService?.ServiceName ?? "Unknown",
-            target = d.TargetService?.ServiceName ?? "Unknown",
-            sourceHost = d.SourceService?.Server?.Hostname ?? "",
-            targetHost = d.TargetService?.Server?.Hostname ?? ""
+            from = d.SourceService?.Server?.Id,
+            to = d.TargetService?.Server?.Id,
+            sourceService = d.SourceService?.ServiceName,
+            targetService = d.TargetService?.ServiceName,
+            description = d.Description
         })));
 
-        const svg = document.getElementById('dependencySvg');
-        svg.innerHTML = '';
+        // Create nodes for servers
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
 
-        if (dependencies.length === 0) {
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '50%');
-            text.setAttribute('y', '50%');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('fill', '#6c757d');
-            text.textContent = 'No dependencies configured';
-            svg.appendChild(text);
-            return;
+        servers.forEach(server => {
+            const serviceList = server.services.map(s =>
+                `• ${s.name} :${s.port} (${s.status}) ${s.app ? '[' + s.app + ']' : ''}`
+            ).join('\n');
+
+            const envColor = {
+                'production': '#dc3545',
+                'staging': '#ffc107',
+                'development': '#17a2b8',
+                'testing': '#28a745'
+            }[server.environment] || '#6c757d';
+
+            nodes.add({
+                id: server.id,
+                label: server.hostname,
+                title: `<div style="padding: 10px;">
+                    <strong>${server.hostname}</strong><br/>
+                    IP: ${server.ip || 'N/A'}<br/>
+                    OS: ${server.os || 'N/A'}<br/>
+                    Environment: ${server.environment}<br/>
+                    Status: ${server.status}<br/>
+                    <hr/>
+                    <strong>Services:</strong><br/>
+                    ${serviceList.replace(/\n/g, '<br/>')}
+                </div>`,
+                shape: 'box',
+                color: {
+                    background: envColor,
+                    border: '#fff',
+                    highlight: {
+                        background: envColor,
+                        border: '#000'
+                    }
+                },
+                font: { color: 'white', size: 14, bold: true },
+                borderWidth: 2,
+                margin: 10,
+                mass: 3,
+                size: 30,
+                physics: true,
+                fixed: false
+            });
+        });
+
+        // Add service nodes inside servers
+        servers.forEach(server => {
+            let yOffset = 0;
+            server.services.forEach((service, index) => {
+                const serviceNodeId = `service-${server.id}-${index}`;
+                const statusColor = service.status === 'running' ? '#28a745' : '#dc3545';
+
+                nodes.add({
+                    id: serviceNodeId,
+                    label: `${service.name}\n:${service.port}`,
+                    title: `Service: ${service.name}<br/>Port: ${service.port}<br/>Status: ${service.status}<br/>App: ${service.app || 'N/A'}`,
+                    shape: 'circle',
+                    color: statusColor,
+                    font: { color: 'white', size: 10 },
+                    size: 20,
+                    level: 1,
+                    hidden: false
+                });
+
+                // Connect service to its server
+                edges.add({
+                    from: server.id,
+                    to: serviceNodeId,
+                    length: 50,
+                    color: { color: '#ccc', opacity: 0.5 },
+                    width: 1,
+                    smooth: false,
+                    physics: false
+                });
+            });
+        });
+
+        // Create edges for dependencies between servers
+        const serverConnections = new Map();
+        dependencies.forEach(dep => {
+            if (dep.from && dep.to && dep.from !== dep.to) {
+                const key = `${dep.from}-${dep.to}`;
+                if (!serverConnections.has(key)) {
+                    serverConnections.set(key, []);
+                }
+                serverConnections.get(key).push(`${dep.sourceService} → ${dep.targetService}`);
+            }
+        });
+
+        serverConnections.forEach((services, key) => {
+            const [from, to] = key.split('-');
+            edges.add({
+                from: parseInt(from),
+                to: parseInt(to),
+                arrows: 'to',
+                label: services.length.toString(),
+                title: services.join('<br/>'),
+                color: { color: '#007bff' },
+                width: Math.min(services.length * 2, 8),
+                smooth: { type: 'curvedCW', roundness: 0.2 }
+            });
+        });
+
+        // Create network
+        const container = document.getElementById('deploymentNetwork');
+        const data = { nodes: nodes, edges: edges };
+        const options = {
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: 'LR',
+                    sortMethod: 'directed',
+                    nodeSpacing: 200,
+                    levelSeparation: 300
+                }
+            },
+            physics: {
+                enabled: physicsEnabled,
+                hierarchicalRepulsion: {
+                    nodeDistance: 200,
+                    springLength: 200
+                }
+            },
+            interaction: {
+                hover: true,
+                navigationButtons: true,
+                keyboard: true,
+                zoomSpeed: 0.5
+            },
+            nodes: {
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                shadow: true
+            }
+        };
+
+        deploymentNetwork = new vis.Network(container, data, options);
+
+        // Add double-click event to navigate to server details
+        deploymentNetwork.on("doubleClick", function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                if (typeof nodeId === 'number') {
+                    window.location.href = `/Servers/Details/${nodeId}`;
+                }
+            }
+        });
+    }
+
+    function initDependencyNetwork() {
+        const services = @Html.Raw(Json.Serialize(Model.Services.Select(s => new {
+            id = s.Id,
+            name = s.ServiceName,
+            server = s.Server?.Hostname,
+            app = s.Application?.Name,
+            status = s.Status
+        })));
+
+        const dependencies = @Html.Raw(Json.Serialize(Model.Dependencies.Select(d => new {
+            from = d.SourceServiceId,
+            to = d.TargetServiceId,
+            description = d.Description
+        })));
+
+        // Create nodes for services
+        const nodes = new vis.DataSet();
+        services.forEach(service => {
+            const statusColor = service.status === 'running' ? '#28a745' :
+                               service.status === 'stopped' ? '#dc3545' : '#ffc107';
+
+            nodes.add({
+                id: service.id,
+                label: `${service.name}\n[${service.server}]`,
+                title: `Service: ${service.name}<br/>Server: ${service.server}<br/>App: ${service.app || 'N/A'}<br/>Status: ${service.status}`,
+                shape: 'box',
+                color: {
+                    background: statusColor,
+                    border: '#fff'
+                },
+                font: { color: 'white' },
+                borderWidth: 2
+            });
+        });
+
+        // Create edges for dependencies
+        const edges = new vis.DataSet();
+        dependencies.forEach(dep => {
+            edges.add({
+                from: dep.from,
+                to: dep.to,
+                arrows: 'to',
+                label: dep.description ? dep.description.substring(0, 20) + '...' : '',
+                title: dep.description,
+                color: { color: '#007bff' },
+                width: 2,
+                smooth: { type: 'curvedCW' }
+            });
+        });
+
+        // Create network
+        const container = document.getElementById('dependencyNetwork');
+        const data = { nodes: nodes, edges: edges };
+        const options = {
+            layout: {
+                improvedLayout: true,
+                hierarchical: false
+            },
+            physics: {
+                enabled: true,
+                stabilization: {
+                    iterations: 1000
+                },
+                barnesHut: {
+                    gravitationalConstant: -8000,
+                    springConstant: 0.04
+                }
+            },
+            interaction: {
+                hover: true,
+                navigationButtons: true,
+                keyboard: true
+            }
+        };
+
+        dependencyNetwork = new vis.Network(container, data, options);
+
+        // Add double-click event to navigate to service details
+        dependencyNetwork.on("doubleClick", function(params) {
+            if (params.nodes.length > 0) {
+                window.location.href = `/Services/Details/${params.nodes[0]}`;
+            }
+        });
+    }
+
+    function resetDeploymentView() {
+        if (deploymentNetwork) {
+            deploymentNetwork.fit();
         }
+    }
 
-        // Create nodes from dependencies
-        const nodes = new Map();
-        dependencies.forEach(dep => {
-            if (!nodes.has(dep.source)) {
-                nodes.set(dep.source, { name: dep.source, host: dep.sourceHost });
-            }
-            if (!nodes.has(dep.target)) {
-                nodes.set(dep.target, { name: dep.target, host: dep.targetHost });
-            }
-        });
+    function resetDependencyView() {
+        if (dependencyNetwork) {
+            dependencyNetwork.fit();
+        }
+    }
 
-        const nodeArray = Array.from(nodes.values());
-        const centerX = 250;
-        const centerY = 200;
-        const radius = 150;
-
-        // Position nodes in a circle
-        nodeArray.forEach((node, i) => {
-            const angle = (2 * Math.PI * i) / nodeArray.length;
-            node.x = centerX + radius * Math.cos(angle);
-            node.y = centerY + radius * Math.sin(angle);
-        });
-
-        // Draw edges
-        dependencies.forEach(dep => {
-            const sourceNode = nodeArray.find(n => n.name === dep.source);
-            const targetNode = nodeArray.find(n => n.name === dep.target);
-
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', sourceNode.x);
-            line.setAttribute('y1', sourceNode.y);
-            line.setAttribute('x2', targetNode.x);
-            line.setAttribute('y2', targetNode.y);
-            line.setAttribute('stroke', '#007bff');
-            line.setAttribute('stroke-width', '2');
-            line.setAttribute('marker-end', 'url(#arrowhead)');
-            svg.appendChild(line);
-        });
-
-        // Draw nodes
-        nodeArray.forEach(node => {
-            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', node.x);
-            circle.setAttribute('cy', node.y);
-            circle.setAttribute('r', '25');
-            circle.setAttribute('fill', '#28a745');
-            circle.setAttribute('stroke', '#fff');
-            circle.setAttribute('stroke-width', '2');
-            g.appendChild(circle);
-
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', node.x);
-            text.setAttribute('y', node.y + 5);
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('fill', 'white');
-            text.setAttribute('font-size', '10');
-            text.textContent = node.name;
-            g.appendChild(text);
-
-            if (node.host) {
-                const hostText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                hostText.setAttribute('x', node.x);
-                hostText.setAttribute('y', node.y + 40);
-                hostText.setAttribute('text-anchor', 'middle');
-                hostText.setAttribute('fill', '#6c757d');
-                hostText.setAttribute('font-size', '9');
-                hostText.textContent = node.host;
-                g.appendChild(hostText);
-            }
-
-            svg.appendChild(g);
-        });
-
-        // Add arrow marker definition
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', 'arrowhead');
-        marker.setAttribute('markerWidth', '10');
-        marker.setAttribute('markerHeight', '7');
-        marker.setAttribute('refX', '25');
-        marker.setAttribute('refY', '3.5');
-        marker.setAttribute('orient', 'auto');
-
-        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-        polygon.setAttribute('fill', '#007bff');
-        marker.appendChild(polygon);
-        defs.appendChild(marker);
-        svg.appendChild(defs);
+    function togglePhysics() {
+        physicsEnabled = !physicsEnabled;
+        if (deploymentNetwork) {
+            deploymentNetwork.setOptions({ physics: { enabled: physicsEnabled } });
+        }
     }
 </script>
 }
