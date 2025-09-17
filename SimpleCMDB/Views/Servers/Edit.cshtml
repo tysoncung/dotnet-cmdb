@@ -1,0 +1,100 @@
+@model SimpleCMDB.Models.Server
+
+@{
+    ViewData["Title"] = "Edit Server";
+}
+
+<h1>Edit Server</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <div class="form-group mb-3">
+                <label asp-for="Hostname" class="control-label"></label>
+                <input asp-for="Hostname" class="form-control" />
+                <span asp-validation-for="Hostname" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="IpAddress" class="control-label"></label>
+                <input asp-for="IpAddress" class="form-control" />
+                <span asp-validation-for="IpAddress" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="OsType" class="control-label"></label>
+                <select asp-for="OsType" class="form-control">
+                    <option value="">Select OS Type</option>
+                    <option value="Linux">Linux</option>
+                    <option value="Windows">Windows</option>
+                    <option value="macOS">macOS</option>
+                    <option value="Other">Other</option>
+                </select>
+                <span asp-validation-for="OsType" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="OsVersion" class="control-label"></label>
+                <input asp-for="OsVersion" class="form-control" />
+                <span asp-validation-for="OsVersion" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Environment" class="control-label"></label>
+                <select asp-for="Environment" class="form-control">
+                    <option value="production">Production</option>
+                    <option value="staging">Staging</option>
+                    <option value="development">Development</option>
+                    <option value="testing">Testing</option>
+                </select>
+                <span asp-validation-for="Environment" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Status" class="control-label"></label>
+                <select asp-for="Status" class="form-control">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Owner" class="control-label"></label>
+                <input asp-for="Owner" class="form-control" />
+                <span asp-validation-for="Owner" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Location" class="control-label"></label>
+                <input asp-for="Location" class="form-control" />
+                <span asp-validation-for="Location" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="CpuCount" class="control-label"></label>
+                <input asp-for="CpuCount" class="form-control" type="number" />
+                <span asp-validation-for="CpuCount" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="MemoryGb" class="control-label"></label>
+                <input asp-for="MemoryGb" class="form-control" />
+                <span asp-validation-for="MemoryGb" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="DiskGb" class="control-label"></label>
+                <input asp-for="DiskGb" class="form-control" />
+                <span asp-validation-for="DiskGb" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Notes" class="control-label"></label>
+                <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
