@@ -205,6 +205,57 @@ namespace SimpleCMDB.Data
                         ProcessName = "python3",
                         StartCommand = "python3 /app/analytics/app.py",
                         LogFile = "/var/log/analytics/app.log"
+                    },
+                    // External services
+                    new Service {
+                        ServiceName = "AWS S3 Storage",
+                        ServerId = null,
+                        ApplicationId = applications[0].Id,
+                        Port = 443,
+                        Protocol = "HTTPS",
+                        Status = "running",
+                        IsExternal = true,
+                        ExternalUrl = "https://s3.amazonaws.com"
+                    },
+                    new Service {
+                        ServiceName = "Stripe Payment API",
+                        ServerId = null,
+                        ApplicationId = applications[0].Id,
+                        Port = 443,
+                        Protocol = "HTTPS",
+                        Status = "running",
+                        IsExternal = true,
+                        ExternalUrl = "https://api.stripe.com"
+                    },
+                    new Service {
+                        ServiceName = "SendGrid Email",
+                        ServerId = null,
+                        ApplicationId = applications[3].Id,
+                        Port = 587,
+                        Protocol = "SMTP",
+                        Status = "running",
+                        IsExternal = true,
+                        ExternalUrl = "https://api.sendgrid.com"
+                    },
+                    new Service {
+                        ServiceName = "Cloudflare CDN",
+                        ServerId = null,
+                        ApplicationId = applications[0].Id,
+                        Port = 443,
+                        Protocol = "HTTPS",
+                        Status = "running",
+                        IsExternal = true,
+                        ExternalUrl = "https://cloudflare.com"
+                    },
+                    new Service {
+                        ServiceName = "Auth0 Identity",
+                        ServerId = null,
+                        ApplicationId = applications[3].Id,
+                        Port = 443,
+                        Protocol = "HTTPS",
+                        Status = "running",
+                        IsExternal = true,
+                        ExternalUrl = "https://auth0.com"
                     }
                 };
 
@@ -243,6 +294,26 @@ namespace SimpleCMDB.Data
                         SourceServiceId = services[8].Id, // analytics-api
                         TargetServiceId = services[2].Id, // postgresql
                         Description = "Analytics API reads from PostgreSQL"
+                    },
+                    new Dependency {
+                        SourceServiceId = services[4].Id, // dotnet app
+                        TargetServiceId = services[9].Id, // AWS S3
+                        Description = ".NET app stores files in AWS S3"
+                    },
+                    new Dependency {
+                        SourceServiceId = services[4].Id, // dotnet app
+                        TargetServiceId = services[10].Id, // Stripe
+                        Description = ".NET app processes payments via Stripe"
+                    },
+                    new Dependency {
+                        SourceServiceId = services[7].Id, // node-portal
+                        TargetServiceId = services[11].Id, // SendGrid
+                        Description = "Portal sends emails via SendGrid"
+                    },
+                    new Dependency {
+                        SourceServiceId = services[7].Id, // node-portal
+                        TargetServiceId = services[13].Id, // Auth0
+                        Description = "Portal authenticates users via Auth0"
                     }
                 };
 

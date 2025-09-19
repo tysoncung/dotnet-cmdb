@@ -1,0 +1,136 @@
+@model SimpleCMDB.Models.Service
+
+@{
+    ViewData["Title"] = "Create Service";
+}
+
+<h1>Create Service</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label asp-for="ServiceName" class="control-label"></label>
+                <input asp-for="ServiceName" class="form-control" />
+                <span asp-validation-for="ServiceName" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-check-label">
+                    <input asp-for="IsExternal" class="form-check-input" type="checkbox" id="isExternal" />
+                    @Html.DisplayNameFor(model => model.IsExternal)
+                    <small class="text-muted d-block">Check if this is an external service (e.g., cloud API, third-party service)</small>
+                </label>
+            </div>
+            <div class="form-group mb-3" id="serverField">
+                <label asp-for="ServerId" class="control-label">Server</label>
+                <select asp-for="ServerId" class="form-control" asp-items="ViewBag.ServerId">
+                    <option value="">Select Server</option>
+                </select>
+                <span asp-validation-for="ServerId" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3" id="externalUrlField" style="display:none;">
+                <label asp-for="ExternalUrl" class="control-label"></label>
+                <input asp-for="ExternalUrl" class="form-control" placeholder="e.g., https://api.stripe.com" />
+                <span asp-validation-for="ExternalUrl" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="ApplicationId" class="control-label">Application</label>
+                <select asp-for="ApplicationId" class="form-control" asp-items="ViewBag.ApplicationId">
+                    <option value="">Select Application (Optional)</option>
+                </select>
+                <span asp-validation-for="ApplicationId" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Port" class="control-label"></label>
+                <input asp-for="Port" class="form-control" type="number" />
+                <span asp-validation-for="Port" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Protocol" class="control-label"></label>
+                <select asp-for="Protocol" class="form-control">
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                    <option value="HTTP">HTTP</option>
+                    <option value="HTTPS">HTTPS</option>
+                </select>
+                <span asp-validation-for="Protocol" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Status" class="control-label"></label>
+                <select asp-for="Status" class="form-control">
+                    <option value="running">Running</option>
+                    <option value="stopped">Stopped</option>
+                    <option value="starting">Starting</option>
+                    <option value="unknown">Unknown</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="ProcessName" class="control-label"></label>
+                <input asp-for="ProcessName" class="form-control" />
+                <span asp-validation-for="ProcessName" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="StartCommand" class="control-label"></label>
+                <input asp-for="StartCommand" class="form-control" />
+                <span asp-validation-for="StartCommand" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="ConfigFile" class="control-label"></label>
+                <input asp-for="ConfigFile" class="form-control" />
+                <span asp-validation-for="ConfigFile" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="LogFile" class="control-label"></label>
+                <input asp-for="LogFile" class="form-control" />
+                <span asp-validation-for="LogFile" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Toggle between internal and external service fields
+        document.getElementById('isExternal').addEventListener('change', function() {
+            const serverField = document.getElementById('serverField');
+            const externalUrlField = document.getElementById('externalUrlField');
+            const processFields = ['ProcessName', 'StartCommand', 'ConfigFile', 'LogFile'];
+
+            if (this.checked) {
+                // External service
+                serverField.style.display = 'none';
+                externalUrlField.style.display = 'block';
+                // Clear server selection
+                document.getElementById('ServerId').value = '';
+                // Hide process-related fields for external services
+                processFields.forEach(field => {
+                    const element = document.querySelector(`[name="${field}"]`);
+                    if (element) {
+                        element.closest('.form-group').style.display = 'none';
+                    }
+                });
+            } else {
+                // Internal service
+                serverField.style.display = 'block';
+                externalUrlField.style.display = 'none';
+                // Clear external URL
+                document.getElementById('ExternalUrl').value = '';
+                // Show process-related fields for internal services
+                processFields.forEach(field => {
+                    const element = document.querySelector(`[name="${field}"]`);
+                    if (element) {
+                        element.closest('.form-group').style.display = 'block';
+                    }
+                });
+            }
+        });
+    </script>
+}

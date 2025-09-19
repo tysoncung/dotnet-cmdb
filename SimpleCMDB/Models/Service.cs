@@ -36,6 +36,12 @@ namespace SimpleCMDB.Models
         [Display(Name = "Log File")]
         public string? LogFile { get; set; }
 
+        [Display(Name = "Is External")]
+        public bool IsExternal { get; set; } = false; // External services don't have server details
+
+        [Display(Name = "External URL")]
+        public string? ExternalUrl { get; set; } // URL for external services
+
         [Display(Name = "Created At")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

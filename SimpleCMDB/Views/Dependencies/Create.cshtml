@@ -1,0 +1,191 @@
+@model SimpleCMDB.Models.Dependency
+
+@{
+    ViewData["Title"] = "Create Dependency";
+}
+
+<h1>Create Dependency</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <!-- Basic Information -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="SourceServiceId" class="control-label"></label>
+                                <select asp-for="SourceServiceId" class="form-control" asp-items="ViewBag.SourceServiceId">
+                                    <option value="">Select Source Service</option>
+                                </select>
+                                <span asp-validation-for="SourceServiceId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="TargetServiceId" class="control-label"></label>
+                                <select asp-for="TargetServiceId" class="form-control" asp-items="ViewBag.TargetServiceId">
+                                    <option value="">Select Target Service</option>
+                                </select>
+                                <span asp-validation-for="TargetServiceId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="Description" class="control-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="e.g., API calls for user authentication"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="IsCritical" class="form-check-label">
+                            <input asp-for="IsCritical" class="form-check-input" type="checkbox" />
+                            @Html.DisplayNameFor(model => model.IsCritical)
+                            <small class="text-muted d-block">If checked, the source service will fail if this dependency is unavailable</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Details -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Connection Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Protocol" class="control-label"></label>
+                                <select asp-for="Protocol" class="form-control">
+                                    <option value="TCP">TCP</option>
+                                    <option value="UDP">UDP</option>
+                                    <option value="HTTP">HTTP</option>
+                                    <option value="HTTPS">HTTPS</option>
+                                    <option value="gRPC">gRPC</option>
+                                    <option value="WebSocket">WebSocket</option>
+                                    <option value="AMQP">AMQP</option>
+                                    <option value="MQTT">MQTT</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                                <span asp-validation-for="Protocol" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Port" class="control-label"></label>
+                                <input asp-for="Port" class="form-control" type="number" placeholder="e.g., 443, 8080" />
+                                <span asp-validation-for="Port" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="ApiVersion" class="control-label"></label>
+                                <input asp-for="ApiVersion" class="form-control" placeholder="e.g., v1, 2.0" />
+                                <span asp-validation-for="ApiVersion" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="TimeoutSeconds" class="control-label"></label>
+                                <input asp-for="TimeoutSeconds" class="form-control" type="number" value="30" />
+                                <span asp-validation-for="TimeoutSeconds" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="RetryCount" class="control-label"></label>
+                                <input asp-for="RetryCount" class="form-control" type="number" value="3" />
+                                <span asp-validation-for="RetryCount" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Authentication Details -->
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Authentication Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="AuthType" class="control-label"></label>
+                                <select asp-for="AuthType" class="form-control">
+                                    <option value="">None</option>
+                                    <option value="Basic">Basic Auth</option>
+                                    <option value="Bearer">Bearer Token</option>
+                                    <option value="APIKey">API Key</option>
+                                    <option value="OAuth2">OAuth 2.0</option>
+                                    <option value="Certificate">Certificate</option>
+                                    <option value="SAML">SAML</option>
+                                    <option value="Kerberos">Kerberos</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                                <span asp-validation-for="AuthType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="ServiceAccount" class="control-label"></label>
+                                <input asp-for="ServiceAccount" class="form-control" placeholder="e.g., svc-app-prod" />
+                                <span asp-validation-for="ServiceAccount" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="Certificate" class="control-label"></label>
+                        <input asp-for="Certificate" class="form-control" placeholder="e.g., /etc/ssl/certs/client.crt or cert-name-in-store" />
+                        <span asp-validation-for="Certificate" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Auto-populate port based on protocol selection
+        document.getElementById('Protocol').addEventListener('change', function() {
+            const portInput = document.getElementById('Port');
+            const protocolPorts = {
+                'HTTP': 80,
+                'HTTPS': 443,
+                'gRPC': 50051,
+                'WebSocket': 80,
+                'AMQP': 5672,
+                'MQTT': 1883
+            };
+            if (protocolPorts[this.value] && !portInput.value) {
+                portInput.value = protocolPorts[this.value];
+            }
+        });
+
+        // Show/hide certificate field based on auth type
+        document.getElementById('AuthType').addEventListener('change', function() {
+            const certField = document.querySelector('[name="Certificate"]').closest('.form-group');
+            if (this.value === 'Certificate') {
+                certField.style.display = 'block';
+            } else {
+                certField.style.display = 'none';
+            }
+        });
+    </script>
+}

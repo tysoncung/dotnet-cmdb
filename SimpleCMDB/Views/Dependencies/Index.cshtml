@@ -128,9 +128,9 @@
     });
 
     function initDeploymentDiagram() {
-        // Prepare data from the model
+        // Prepare data from the model - internal services grouped by server
         const servers = @Html.Raw(Json.Serialize(Model.Services
-            .Where(s => s.Server != null)
+            .Where(s => s.Server != null && !s.IsExternal)
             .GroupBy(s => s.Server.Id)
             .Select(g => new {
                 id = g.Key,
@@ -140,6 +140,7 @@
                 environment = g.First().Server.Environment,
                 status = g.First().Server.Status,
                 services = g.Select(s => new {
+                    id = s.Id,
                     name = s.ServiceName,
                     port = s.Port,
                     status = s.Status,
@@ -147,22 +148,50 @@
                 }).ToList()
             })));
 
+        // External services
+        const externalServices = @Html.Raw(Json.Serialize(Model.Services
+            .Where(s => s.IsExternal)
+            .Select(s => new {
+                id = s.Id,
+                name = s.ServiceName,
+                url = s.ExternalUrl,
+                port = s.Port,
+                protocol = s.Protocol,
+                app = s.Application?.Name
+            })));
+
         const dependencies = @Html.Raw(Json.Serialize(Model.Dependencies.Select(d => new {
-            from = d.SourceService?.Server?.Id,
-            to = d.TargetService?.Server?.Id,
+            from = d.SourceServiceId,
+            to = d.TargetServiceId,
+            fromServer = d.SourceService?.Server?.Id,
+            toServer = d.TargetService?.Server?.Id,
             sourceService = d.SourceService?.ServiceName,
             targetService = d.TargetService?.ServiceName,
-            description = d.Description
+            description = d.Description,
+            fromExternal = d.SourceService?.IsExternal ?? false,
+            toExternal = d.TargetService?.IsExternal ?? false
         })));
+
+        console.log('Servers:', servers);
+        console.log('Dependencies:', dependencies);
 
         // Create nodes for servers
         const nodes = new vis.DataSet();
         const edges = new vis.DataSet();
 
+        if (servers.length === 0) {
+            document.getElementById('deploymentNetwork').innerHTML = '<div class="alert alert-info m-4">No servers with services found. Please add some servers and services first.</div>';
+            return;
+        }
+
         servers.forEach(server => {
-            const serviceList = server.services.map(s =>
-                `• ${s.name} :${s.port} (${s.status}) ${s.app ? '[' + s.app + ']' : ''}`
-            ).join('\n');
+            // Create HTML content for services inside server box
+            const serviceBoxes = server.services.map(s => {
+                const statusColor = s.status === 'running' ? '#4CAF50' : '#F44336';
+                return `<div style="background:${statusColor}; color:white; padding:2px 5px; margin:2px; border-radius:3px; font-size:10px; display:inline-block;">
+                    ${s.name}:${s.port}
+                </div>`;
+            }).join('');
 
             const envColor = {
                 'production': '#dc3545',
@@ -171,94 +200,97 @@
                 'testing': '#28a745'
             }[server.environment] || '#6c757d';
 
+            // Create server node with larger size to contain services
             nodes.add({
-                id: server.id,
-                label: server.hostname,
-                title: `<div style="padding: 10px;">
-                    <strong>${server.hostname}</strong><br/>
-                    IP: ${server.ip || 'N/A'}<br/>
-                    OS: ${server.os || 'N/A'}<br/>
-                    Environment: ${server.environment}<br/>
-                    Status: ${server.status}<br/>
-                    <hr/>
-                    <strong>Services:</strong><br/>
-                    ${serviceList.replace(/\n/g, '<br/>')}
-                </div>`,
+                id: `server-${server.id}`,
+                label: `<<b>${server.hostname}</b>\n${server.ip || 'N/A'}\n──────────\n${server.services.map(s => `${s.name}:${s.port}`).join('\n')}>`,
+                title: `<strong>${server.hostname}</strong><br>
+                    IP: ${server.ip || 'N/A'}<br>
+                    OS: ${server.os || 'N/A'}<br>
+                    Environment: ${server.environment}<br>
+                    Status: ${server.status}<br>
+                    <hr>
+                    <strong>Services:</strong><br>
+                    ${serviceBoxes}`,
                 shape: 'box',
+                shapeProperties: {
+                    borderRadius: 5
+                },
                 color: {
-                    background: envColor,
-                    border: '#fff',
+                    background: '#ffffff',
+                    border: envColor,
                     highlight: {
-                        background: envColor,
-                        border: '#000'
+                        background: '#f5f5f5',
+                        border: envColor
                     }
                 },
-                font: { color: 'white', size: 14, bold: true },
-                borderWidth: 2,
+                font: { color: '#333', size: 12, multi: true },
+                borderWidth: 3,
                 margin: 10,
-                mass: 3,
-                size: 30,
-                physics: true,
-                fixed: false
+                widthConstraint: { minimum: 150, maximum: 250 },
+                heightConstraint: { minimum: 100 }
             });
-        });
 
-        // Add service nodes inside servers
-        servers.forEach(server => {
-            let yOffset = 0;
-            server.services.forEach((service, index) => {
-                const serviceNodeId = `service-${server.id}-${index}`;
-                const statusColor = service.status === 'running' ? '#28a745' : '#dc3545';
-
+            // Add service nodes (hidden by default, used for dependency connections)
+            server.services.forEach(service => {
                 nodes.add({
-                    id: serviceNodeId,
-                    label: `${service.name}\n:${service.port}`,
-                    title: `Service: ${service.name}<br/>Port: ${service.port}<br/>Status: ${service.status}<br/>App: ${service.app || 'N/A'}`,
-                    shape: 'circle',
-                    color: statusColor,
-                    font: { color: 'white', size: 10 },
-                    size: 20,
-                    level: 1,
-                    hidden: false
-                });
-
-                // Connect service to its server
-                edges.add({
-                    from: server.id,
-                    to: serviceNodeId,
-                    length: 50,
-                    color: { color: '#ccc', opacity: 0.5 },
-                    width: 1,
-                    smooth: false,
+                    id: `service-${service.id}`,
+                    label: service.name,
+                    hidden: true,
                     physics: false
                 });
             });
         });
 
-        // Create edges for dependencies between servers
-        const serverConnections = new Map();
-        dependencies.forEach(dep => {
-            if (dep.from && dep.to && dep.from !== dep.to) {
-                const key = `${dep.from}-${dep.to}`;
-                if (!serverConnections.has(key)) {
-                    serverConnections.set(key, []);
-                }
-                serverConnections.get(key).push(`${dep.sourceService} → ${dep.targetService}`);
-            }
+        // Add external service nodes (cloud shape)
+        externalServices.forEach(service => {
+            nodes.add({
+                id: `service-${service.id}`,
+                label: `☁ ${service.name}\n${service.url ? service.url.replace('https://', '') : ''}`,
+                title: `<strong>External Service: ${service.name}</strong><br>
+                    URL: ${service.url || 'N/A'}<br>
+                    Protocol: ${service.protocol}<br>
+                    Port: ${service.port}<br>
+                    App: ${service.app || 'N/A'}`,
+                shape: 'ellipse',
+                color: {
+                    background: '#E3F2FD',
+                    border: '#1976D2',
+                    highlight: {
+                        background: '#BBDEFB',
+                        border: '#1565C0'
+                    }
+                },
+                font: { color: '#1976D2', size: 11 },
+                borderWidth: 2,
+                borderWidthSelected: 3,
+                margin: 10
+            });
         });
 
-        serverConnections.forEach((services, key) => {
-            const [from, to] = key.split('-');
-            edges.add({
-                from: parseInt(from),
-                to: parseInt(to),
-                arrows: 'to',
-                label: services.length.toString(),
-                title: services.join('<br/>'),
-                color: { color: '#007bff' },
-                width: Math.min(services.length * 2, 8),
-                smooth: { type: 'curvedCW', roundness: 0.2 }
-            });
+        // Create edges for dependencies
+        dependencies.forEach(dep => {
+            const fromNode = dep.fromExternal ? `service-${dep.from}` :
+                            (dep.fromServer ? `server-${dep.fromServer}` : null);
+            const toNode = dep.toExternal ? `service-${dep.to}` :
+                          (dep.toServer ? `server-${dep.toServer}` : null);
+
+            if (fromNode && toNode) {
+                edges.add({
+                    from: fromNode,
+                    to: toNode,
+                    arrows: 'to',
+                    label: dep.description ? dep.description.substring(0, 30) + '...' : '',
+                    title: `${dep.sourceService} → ${dep.targetService}<br/>${dep.description}`,
+                    color: {
+                        color: dep.fromExternal || dep.toExternal ? '#FF9800' : '#2196F3',
+                        highlight: dep.fromExternal || dep.toExternal ? '#FF6F00' : '#1976D2'
+                    },
+                    width: 2,
+                    smooth: { type: 'curvedCW', roundness: 0.2 },
+                    dashes: dep.fromExternal || dep.toExternal ? [5, 5] : false
+                });
+            }
         });
 
         // Create network
@@ -266,23 +298,23 @@
         const data = { nodes: nodes, edges: edges };
         const options = {
             layout: {
-                hierarchical: {
-                    enabled: true,
-                    direction: 'LR',
-                    sortMethod: 'directed',
-                    nodeSpacing: 200,
-                    levelSeparation: 300
-                }
+                randomSeed: 2,
+                improvedLayout: true
             },
             physics: {
                 enabled: physicsEnabled,
-                hierarchicalRepulsion: {
-                    nodeDistance: 200,
+                stabilization: {
+                    iterations: 1000
+                },
+                barnesHut: {
+                    gravitationalConstant: -8000,
+                    springConstant: 0.04,
                     springLength: 200
                 }
             },
             interaction: {
                 hover: true,
+                tooltipDelay: 0,
                 navigationButtons: true,
                 keyboard: true,
                 zoomSpeed: 0.5
@@ -298,12 +330,59 @@
 
         deploymentNetwork = new vis.Network(container, data, options);
 
-        // Add double-click event to navigate to server details
+        // Custom tooltip handler
+        const tooltip = document.createElement('div');
+        tooltip.style.position = 'absolute';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        tooltip.style.color = 'white';
+        tooltip.style.padding = '10px';
+        tooltip.style.borderRadius = '5px';
+        tooltip.style.fontSize = '12px';
+        tooltip.style.zIndex = '1000';
+        tooltip.style.maxWidth = '300px';
+        document.body.appendChild(tooltip);
+
+        deploymentNetwork.on("hoverNode", function (params) {
+            const node = nodes.get(params.node);
+            if (node && node.title) {
+                tooltip.innerHTML = node.title;
+                tooltip.style.visibility = 'visible';
+            }
+        });
+
+        deploymentNetwork.on("blurNode", function (params) {
+            tooltip.style.visibility = 'hidden';
+        });
+
+        deploymentNetwork.on("hoverEdge", function (params) {
+            const edge = edges.get(params.edge);
+            if (edge && edge.title) {
+                tooltip.innerHTML = edge.title;
+                tooltip.style.visibility = 'visible';
+            }
+        });
+
+        deploymentNetwork.on("blurEdge", function (params) {
+            tooltip.style.visibility = 'hidden';
+        });
+
+        // Update tooltip position on mouse move
+        container.addEventListener('mousemove', function(e) {
+            tooltip.style.left = e.pageX + 10 + 'px';
+            tooltip.style.top = e.pageY + 10 + 'px';
+        });
+
+        // Add double-click event to navigate to details
         deploymentNetwork.on("doubleClick", function(params) {
             if (params.nodes.length > 0) {
                 const nodeId = params.nodes[0];
-                if (typeof nodeId === 'number') {
-                    window.location.href = `/Servers/Details/${nodeId}`;
+                if (nodeId.startsWith('server-')) {
+                    const serverId = nodeId.replace('server-', '');
+                    window.location.href = `/Servers/Details/${serverId}`;
+                } else if (nodeId.startsWith('service-') && !nodeId.includes('external')) {
+                    const serviceId = nodeId.replace('service-', '');
+                    window.location.href = `/Services/Details/${serviceId}`;
                 }
             }
         });
@@ -364,8 +443,7 @@
         const data = { nodes: nodes, edges: edges };
         const options = {
             layout: {
-                improvedLayout: true,
-                hierarchical: false
+                improvedLayout: true
             },
             physics: {
                 enabled: true,

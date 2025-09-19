@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SimpleCMDB.Data;
 
@@ -10,9 +11,11 @@ using SimpleCMDB.Data;
 namespace SimpleCMDB.Migrations
 {
     [DbContext(typeof(CmdbContext))]
-    partial class CmdbContextModelSnapshot : ModelSnapshot
+    [Migration("20250918070852_AddDependencyDetailsFields")]
+    partial class AddDependencyDetailsFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SimpleCMDB.Data;
 
@@ -10,9 +11,11 @@ using SimpleCMDB.Data;
 namespace SimpleCMDB.Migrations
 {
     [DbContext(typeof(CmdbContext))]
-    partial class CmdbContextModelSnapshot : ModelSnapshot
+    [Migration("20250918023140_AddExternalServiceFields")]
+    partial class AddExternalServiceFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -72,15 +75,6 @@ namespace SimpleCMDB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApiVersion")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AuthType")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Certificate")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
@@ -89,28 +83,10 @@ namespace SimpleCMDB.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsCritical")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("Port")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Protocol")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("RetryCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ServiceAccount")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("SourceServiceId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TargetServiceId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("TimeoutSeconds")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

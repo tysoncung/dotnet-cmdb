@@ -1,13 +1,16 @@
 # .NET Core Simple CMDB
 
-A lightweight Configuration Management Database (CMDB) built with ASP.NET Core MVC and SQLite.
+A comprehensive Configuration Management Database (CMDB) built with ASP.NET Core MVC and SQLite, featuring interactive dependency visualization and support for both internal and external services.
 
 ## Features
 
-- 🖥️ **Server Management** - Track physical and virtual servers
-- 📱 **Application Inventory** - Manage applications and versions
-- ⚙️ **Service Mapping** - Document services and their ports
-- 🔗 **Dependency Tracking** - Map relationships between services
+- 🖥️ **Server Management** - Track physical and virtual servers with detailed specifications
+- 📱 **Application Inventory** - Manage applications, versions, and ownership
+- ⚙️ **Service Mapping** - Document both internal services and external cloud services
+- 🔗 **Advanced Dependency Tracking** - Map relationships with authentication, protocols, and SLA details
+- 📊 **Interactive Visualization** - View service dependencies as UML deployment diagrams using vis.js
+- ☁️ **External Service Support** - Track cloud services like AWS, Azure, Stripe, SendGrid
+- 🔐 **Authentication Tracking** - Document service accounts, certificates, and auth methods
 - 🚀 **No External Dependencies** - Uses SQLite (no database server needed!)
 
 ## Prerequisites
@@ -31,7 +34,7 @@ dotnet ef database update
 # Run the application
 dotnet run
 
-# Open browser to http://localhost:5079
+# Open browser to http://localhost:5111
 ```
 
 ## Project Structure
@@ -48,14 +51,33 @@ SimpleCMDB/
 
 ## Models
 
-- **Server** - Physical or virtual servers
-- **Application** - Software applications
-- **Service** - Running services on servers
-- **Dependency** - Service-to-service dependencies
+- **Server** - Physical or virtual servers with environment, location, and resource specifications
+- **Application** - Software applications with version, owner, and criticality tracking
+- **Service** - Both internal services (on servers) and external services (cloud/SaaS)
+- **Dependency** - Advanced service-to-service relationships with:
+  - Connection details (protocol, port, timeout, retry)
+  - Authentication (service accounts, certificates, auth methods)
+  - SLA parameters (criticality flags, API versions)
+
+## Key Features
+
+### Interactive Dependency Visualization
+- Navigate to `/Dependencies` to see an interactive network diagram
+- Servers displayed as boxes containing their services
+- External services shown as cloud-shaped nodes
+- Color-coded by environment (Production, Staging, Development)
+- Click nodes for detailed information
+- Drag nodes to rearrange the layout
+
+### External Service Support
+- Track cloud services (AWS S3, Azure, Google Cloud)
+- Document third-party APIs (Stripe, SendGrid, Auth0)
+- Specify external URLs and endpoints
+- Maintain SLA and authentication details
 
 ## Database
 
-The application uses SQLite with Entity Framework Core. The database file `cmdb.db` is created automatically on first run.
+The application uses SQLite with Entity Framework Core. The database file `cmdb.db` is created automatically on first run with sample data.
 
 ## API Endpoints
 
